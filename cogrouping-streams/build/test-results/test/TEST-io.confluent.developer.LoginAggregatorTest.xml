@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="io.confluent.developer.LoginAggregatorTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2022-07-09T02:52:44" hostname="dhanuka" time="0.171">
+  <properties/>
+  <testcase name="shouldAggregateValues" classname="io.confluent.developer.LoginAggregatorTest" time="0.171"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

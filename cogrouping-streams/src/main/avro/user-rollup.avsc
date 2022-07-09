@@ -1,0 +1,15 @@
+{
+  "namespace": "io.confluent.developer.avro",
+  "type": "record",
+  "name": "UserRollup",
+  "fields": [
+    {"name": "event_by_user", "type": {
+      "type": "map",
+      "values": {
+        "type": "map",
+        "values": {"type": "long"}
+      }
+    }
+    }
+  ]
+}

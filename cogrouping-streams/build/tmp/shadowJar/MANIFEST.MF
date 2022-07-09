@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Class-Path: kafka-streams-avro-serde-7.1.0.jar kafka-avro-serializer-7.1
+ .0.jar kafka-schema-serializer-7.1.0.jar kafka-schema-registry-client-7
+ .1.0.jar avro-1.11.0.jar slf4j-simple-1.7.36.jar kafka-streams-3.1.0.ja
+ r jackson-annotations-2.12.5.jar jackson-databind-2.12.5.jar jackson-co
+ re-2.12.5.jar commons-compress-1.21.jar common-utils-7.1.0.jar slf4j-ap
+ i-1.7.36.jar kafka-clients-7.1.0-ccs.jar rocksdbjni-6.22.1.1.jar guava-
+ 30.1.1-jre.jar swagger-annotations-2.1.10.jar failureaccess-1.0.1.jar l
+ istenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar jsr305-3.
+ 0.2.jar checker-qual-3.8.0.jar error_prone_annotations-2.5.1.jar j2objc
+ -annotations-1.3.jar
+Main-Class: io.confluent.developer.CogroupingStreams
+

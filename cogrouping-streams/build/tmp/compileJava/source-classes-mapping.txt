@@ -1,0 +1,14 @@
+io/confluent/developer/avro/UserEvent.java
+ io.confluent.developer.avro.UserEvent
+ io.confluent.developer.avro.UserEvent$1
+ io.confluent.developer.avro.UserEvent$Builder
+io/confluent/developer/avro/UserRollup.java
+ io.confluent.developer.avro.UserRollup
+ io.confluent.developer.avro.UserRollup$1
+ io.confluent.developer.avro.UserRollup$Builder
+io/confluent/developer/LoginAggregator.java
+ io.confluent.developer.LoginAggregator
+io/confluent/developer/CogroupingStreams.java
+ io.confluent.developer.CogroupingStreams
+ io.confluent.developer.CogroupingStreams$1
+ io.confluent.developer.CogroupingStreams$TutorialDataGenerator
