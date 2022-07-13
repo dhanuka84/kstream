@@ -1,16 +1,10 @@
 package io.confluent.developer;
 
 
-import io.confluent.common.utils.TestUtils;
-import io.confluent.developer.avro.UserEvent;
-import io.confluent.developer.avro.UserRollup;
-import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
-import io.confluent.kafka.serializers.KafkaAvroDeserializer;
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
-import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,13 +12,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -38,6 +33,13 @@ import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.kstream.SlidingWindows;
+import org.apache.kafka.streams.kstream.WindowedSerdes.TimeWindowedSerde;
+
+import io.confluent.developer.avro.UserEvent;
+import io.confluent.developer.avro.UserRollup;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 public class CogroupingStreams {
 
@@ -67,8 +69,14 @@ public class CogroupingStreams {
         appOneGrouped.cogroup(loginAggregator)
             .cogroup(appTwoGrouped, loginAggregator)
             .cogroup(appThreeGrouped, loginAggregator)
+            
+            .windowedBy(SlidingWindows.ofTimeDifferenceAndGrace(Duration.ofSeconds(10), Duration.ofSeconds(1)))
+            
             .aggregate(() -> new UserRollup(new HashMap<>()), Materialized.with(Serdes.String(), loginRollupSerde))
-            .toStream().to(totalResultOutputTopic, Produced.with(stringSerde, loginRollupSerde));
+            .toStream()
+            .filter((k, v) -> v != null)
+            .to(totalResultOutputTopic, Produced
+            .with(new TimeWindowedSerde<>(Serdes.String(), Long.MAX_VALUE), loginRollupSerde));
 
         return builder.build();
     }
@@ -132,6 +140,11 @@ public class CogroupingStreams {
         TutorialDataGenerator dataGenerator = new TutorialDataGenerator(allProps);
         dataGenerator.generate();
 
+        allProps.put(StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG, EventTimestampExtractor.class.getName());
+        // Setting this to a low value on purpose to flush the cache quickly during the demo
+        // Normally you'll want to keep this setting at the default value of 30 seconds
+        allProps.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000);
+        
         final KafkaStreams streams = new KafkaStreams(topology, allProps);
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -164,30 +177,34 @@ public class CogroupingStreams {
         public void generate() {
             properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
             properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+            
+           
+            Instant instant = Instant.now();
+            Long time = instant.toEpochMilli();
 
             try (Producer<String, UserEvent> producer = new KafkaProducer<String, UserEvent>(properties)) {
                 HashMap<String, List<UserEvent>> entryData = new HashMap<>();
 
-                List<UserEvent> messages1 = Arrays.asList(new UserEvent("one", "Ted", 12456L),
-                    new UserEvent("one", "Ted", 12457L),
-                    new UserEvent("one", "Carol", 12458L),
-                    new UserEvent("one", "Carol", 12458L),
-                    new UserEvent("one", "Alice", 12458L),
-                    new UserEvent("one", "Carol", 12458L));
+                List<UserEvent> messages1 = Arrays.asList(new UserEvent("one", "Ted", time),
+                    new UserEvent("one", "Ted", time),
+                    new UserEvent("one", "Carol", time),
+                    new UserEvent("one", "Carol", time),
+                    new UserEvent("one", "Alice", time),
+                    new UserEvent("one", "Carol", time));
                 final String topic1 = properties.getProperty("app-one.topic.name");
                 entryData.put(topic1, messages1);
 
-                List<UserEvent> messages2 = Arrays.asList(new UserEvent("two", "Bob", 12456L),
-                    new UserEvent("two", "Carol", 12457L),
-                    new UserEvent("two", "Ted", 12458L),
-                    new UserEvent("two", "Carol", 12459L));
+                List<UserEvent> messages2 = Arrays.asList(new UserEvent("two", "Bob", time),
+                    new UserEvent("two", "Carol", time),
+                    new UserEvent("two", "Ted", time),
+                    new UserEvent("two", "Carol", time));
                 final String topic2 = properties.getProperty("app-two.topic.name");
                 entryData.put(topic2, messages2);
 
-                List<UserEvent> messages3 = Arrays.asList(new UserEvent("three", "Bob", 12456L),
-                    new UserEvent("three", "Alice", 12457L),
-                    new UserEvent("three", "Alice", 12458L),
-                    new UserEvent("three", "Carol", 12459L));
+                List<UserEvent> messages3 = Arrays.asList(new UserEvent("three", "Bob", time),
+                    new UserEvent("three", "Alice", time),
+                    new UserEvent("three", "Alice", time),
+                    new UserEvent("three", "Carol", time));
                 final String topic3 = properties.getProperty("app-three.topic.name");
                 entryData.put(topic3, messages3);
 

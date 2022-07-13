@@ -1,4 +1,4 @@
-io/confluent/developer/CogroupingStreamsTest.java
- io.confluent.developer.CogroupingStreamsTest
 io/confluent/developer/LoginAggregatorTest.java
  io.confluent.developer.LoginAggregatorTest
+io/confluent/developer/CogroupingStreamsTest.java
+ io.confluent.developer.CogroupingStreamsTest
